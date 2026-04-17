@@ -1,0 +1,39 @@
+{
+  "name": "wathiqati",
+  "version": "1.0.0",
+  "description": "Wathiqati - Full-stack Document Management System",
+  "main": "backend/server.js",
+  "scripts": {
+    "start": "node backend/server.js",
+    "dev": "concurrently \"cd backend && npm run dev\" \"cd frontend && npm start\"",
+    "backend": "cd backend && npm start",
+    "backend:dev": "cd backend && npm run dev",
+    "frontend": "cd frontend && npm start",
+    "frontend:dev": "cd frontend && npm start",
+    "frontend:build": "cd frontend && npm run build",
+    "db:init": "cd backend && node scripts/init-db.js",
+    "db:sync": "cd backend && npm run db:sync",
+    "install:all": "npm install && cd backend && npm install && cd ../frontend && npm install",
+    "build:all": "npm run frontend:build"
+  },
+  "dependencies": {
+    "jspdf": "^4.2.0",
+    "node-fetch": "^3.3.2"
+  },
+  "devDependencies": {
+    "concurrently": "^9.2.1"
+  },
+  "engines": {
+    "node": ">=14.0.0",
+    "npm": ">=6.0.0"
+  },
+  "keywords": [
+    "document",
+    "management",
+    "administration",
+    "full-stack",
+    "nodejs",
+    "react",
+    "mysql"
+  ]
+}

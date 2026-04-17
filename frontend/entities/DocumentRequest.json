@@ -1,0 +1,34 @@
+{
+  "name": "DocumentRequest",
+  "type": "object",
+  "properties": {
+    "request_number": { "type": "string", "description": "Numéro unique de la demande" },
+    "document_type": {
+      "type": "string",
+      "enum": ["certificat_residence","certificat_vie","certificat_celibat","extrait_naissance","certificat_bonne_vie","fiche_etat_civil","legalisation_signature","certificat_nationalite"],
+      "description": "Type de document demandé"
+    },
+    "status": { "type": "string", "enum": ["pending","processing","approved","rejected","ready"], "default": "pending" },
+    "first_name_fr": { "type": "string" },
+    "last_name_fr": { "type": "string" },
+    "first_name_ar": { "type": "string" },
+    "last_name_ar": { "type": "string" },
+    "date_of_birth": { "type": "string", "format": "date" },
+    "place_of_birth_fr": { "type": "string" },
+    "place_of_birth_ar": { "type": "string" },
+    "national_id": { "type": "string" },
+    "address_fr": { "type": "string" },
+    "address_ar": { "type": "string" },
+    "phone": { "type": "string" },
+    "father_name_fr": { "type": "string" },
+    "father_name_ar": { "type": "string" },
+    "mother_name_fr": { "type": "string" },
+    "mother_name_ar": { "type": "string" },
+    "purpose": { "type": "string" },
+    "notes": { "type": "string" },
+    "admin_notes": { "type": "string" },
+    "pdf_url": { "type": "string" },
+    "rejection_reason": { "type": "string" }
+  },
+  "required": ["document_type","first_name_fr","last_name_fr","first_name_ar","last_name_ar","date_of_birth","national_id"]
+}
