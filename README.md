@@ -10,14 +10,14 @@ A professional full-stack application for managing document requests with multi-
 - **Multi-language Support**: English, French, and Arabic interfaces
 - **PDF Generation**: Generate official documents in PDF format
 - **Notifications**: Real-time notification system for updates
-- **Database**: SQLite for development, MySQL-ready for production
+- **Database**: SQLite for development, PostgreSQL for production
 - **Error Handling**: Comprehensive error handling with user-friendly messages
 - **Role-Based Access**: Admin, Employee, and Citizen roles with proper permissions
 
 ## 🚀 Quick Start
 
 ### Prerequisites
-- Node.js 14+ 
+- Node.js 14+
 - npm 6+
 
 ### Installation
@@ -79,7 +79,75 @@ Use these accounts to test the application:
 - Password: `Password123!`
 - Access: Create & track personal requests
 
-## 📁 Project Structure
+## � Railway Deployment
+
+### Prerequisites
+- Railway account (https://railway.app)
+- GitHub repository
+
+### Step 1: Prepare for Production
+```bash
+# Ensure all dependencies are installed
+npm run install:all
+
+# Build frontend for production
+npm run build
+
+# Test the build locally
+npm start
+```
+
+### Step 2: Environment Variables on Railway
+Set these environment variables in your Railway project:
+
+```bash
+# Application
+NODE_ENV=production
+PORT=5001
+
+# Database (Railway will provide DATABASE_URL)
+DATABASE_URL=${{ Railway.DATABASE_URL }}
+
+# Authentication
+JWT_SECRET=your_super_secure_jwt_secret_here
+JWT_EXPIRE=7d
+BCRYPT_ROUNDS=12
+
+# CORS (replace with your frontend domain)
+CORS_ORIGIN=https://your-frontend-domain.com
+
+# File Upload
+MAX_FILE_SIZE=10485760
+UPLOAD_DIR=./uploads
+
+# Database Sync (set to false after initial deployment)
+DB_FORCE_SYNC=false
+```
+
+### Step 3: Deploy to Railway
+1. Connect your GitHub repository to Railway
+2. Railway will automatically detect the `railway.json` config
+3. The build will:
+   - Install all dependencies
+   - Build the frontend
+   - Start the backend server
+4. Access your app at the Railway-provided URL
+
+### Step 4: Database Setup
+After first deployment:
+1. Check Railway logs to ensure database connection works
+2. If needed, set `DB_FORCE_SYNC=true` temporarily to create tables
+3. Then set back to `false`
+
+### Step 5: Frontend Deployment (Optional)
+For better performance, deploy frontend separately to Vercel/Netlify:
+```bash
+cd frontend
+npm run build
+# Deploy build/ folder to Vercel or Netlify
+```
+
+## �📁 Project Structure
 
 ```
 wathiqati/

@@ -11,13 +11,15 @@
     "frontend": "cd frontend && npm start",
     "frontend:dev": "cd frontend && npm start",
     "frontend:build": "cd frontend && npm run build",
+    "build": "npm run frontend:build",
     "db:init": "cd backend && node scripts/init-db.js",
     "db:sync": "cd backend && npm run db:sync",
     "install:all": "npm install && cd backend && npm install && cd ../frontend && npm install",
-    "build:all": "npm run frontend:build"
+    "build:all": "npm run frontend:build",
+    "railway:build": "npm run install:all && npm run build",
+    "railway:start": "npm start"
   },
   "dependencies": {
-    "jspdf": "^4.2.0",
     "node-fetch": "^3.3.2"
   },
   "devDependencies": {
