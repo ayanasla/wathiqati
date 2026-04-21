@@ -1,5 +1,11 @@
 const path = require('path');
-require('dotenv').config({ path: path.resolve(__dirname, '.env') });
+// Load environment variables - safe for production
+try {
+  require('dotenv').config({ path: path.resolve(__dirname, '.env') });
+} catch (error) {
+  // In production (Railway), env vars are provided directly
+  console.log('Using environment variables from Railway');
+}
 
 const express = require('express');
 const cors = require('cors');
@@ -28,7 +34,9 @@ app.use(express.urlencoded({ limit: '50mb', extended: true }));
 app.use('/uploads', express.static('uploads'));
 
 // Routes
-app.get('/health', (req, res) => res.json({ status: 'OK' }));
+app.get('/health', (req, res) => {
+  res.status(200).send('OK');
+});
 app.use('/api/auth', authRoutes);
 app.use('/api/users', userRoutes);
 app.use('/api/admin', adminRoutes);
@@ -47,12 +55,15 @@ async function start() {
   try {
     const forceSync = process.env.DB_FORCE_SYNC === 'true';
     await sequelize.sync({ force: forceSync });
-    console.log(` Database synced${forceSync ? ' (forced)' : ''}`);
-    app.listen(PORT, () => {
-      console.log(` Server on port ${PORT}`);
+    console.log(`✓ Database synced${forceSync ? ' (forced)' : ''}`);
+
+    // Listen on 0.0.0.0 for Railway deployment
+    app.listen(PORT, '0.0.0.0', () => {
+      console.log(`✓ Server running on port ${PORT}`);
+      console.log(`✓ Health check: http://localhost:${PORT}/health`);
     });
   } catch (err) {
-    console.error('Error:', err.message);
+    console.error('✗ Server startup error:', err.message);
     process.exit(1);
   }
 }

@@ -8,6 +8,7 @@ const requestController = require('../controllers/requestController');
 router.post('/', authenticate, requestController.create);
 router.get('/', authenticate, requestController.list);
 router.get('/:id/document', authenticate, requestController.getDocument);
+router.get('/:id/location', authenticate, requestController.getLocation);
 router.get('/:id/download', authenticate, requestController.downloadDocument);
 router.post('/:id/document', authenticate, requireEmployeeOrAdmin, upload.single('document'), requestController.uploadDocument);
 router.get('/:id', authenticate, requestController.get);

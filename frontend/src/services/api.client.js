@@ -1,314 +1,219 @@
-/**
- * Production-ready API client
- * Uses improved apiRequest for:
- * - Response normalization (snake_case → camelCase)
- * - Request deduplication
- * - Error handling with retry logic
- * - Proper timeout handling
- */
+import {
+  apiRequest,
+  API_ENDPOINTS,
+  BASE_URL,
+  ApiError,
+  getErrorMessage
+} from '../utils/api.config';
 
-import { apiRequest, normalizeResponse, ApiError, API_ENDPOINTS, BASE_URL } from '../utils/api.config';
+
+// ==================== HELPERS ====================
+const buildQuery = (filters = {}) => {
+  const params = new URLSearchParams();
+
+  Object.entries(filters).forEach(([key, value]) => {
+    if (value !== undefined && value !== null && value !== '') {
+      params.append(key, value);
+    }
+  });
+
+  const query = params.toString();
+  return query ? `?${query}` : '';
+};
+
 
 // ==================== AUTH ====================
-export async function login(email, password) {
-  return apiRequest(`${API_ENDPOINTS.AUTH}/login`, {
+export const login = (email, password) =>
+  apiRequest(`${API_ENDPOINTS.AUTH}/login`, {
     method: 'POST',
     body: { email, password },
     skipAuth: true,
   });
-}
 
-export async function register(userData) {
-  return apiRequest(`${API_ENDPOINTS.AUTH}/register`, {
+export const register = (userData) =>
+  apiRequest(`${API_ENDPOINTS.AUTH}/register`, {
     method: 'POST',
     body: userData,
     skipAuth: true,
   });
-}
 
-export async function getMe() {
-  return apiRequest(`${API_ENDPOINTS.AUTH}/profile`);
-}
+export const getMe = () =>
+  apiRequest(`${API_ENDPOINTS.AUTH}/profile`);
 
-export async function updateProfile(data) {
-  return apiRequest(`${API_ENDPOINTS.AUTH}/profile`, {
+export const updateProfile = (data) =>
+  apiRequest(`${API_ENDPOINTS.AUTH}/profile`, {
     method: 'PUT',
     body: data,
   });
-}
 
-export async function changePassword(oldPassword, newPassword) {
-  return apiRequest(`${API_ENDPOINTS.AUTH}/change-password`, {
+export const changePassword = (oldPassword, newPassword) =>
+  apiRequest(`${API_ENDPOINTS.AUTH}/change-password`, {
     method: 'POST',
     body: { oldPassword, newPassword },
   });
-}
+
 
 // ==================== REQUESTS ====================
-export async function getRequests(filters = {}) {
-  const query = new URLSearchParams(filters).toString();
-  return apiRequest(`${API_ENDPOINTS.REQUESTS}${query ? '?' + query : ''}`);
-}
+export const getRequests = (filters = {}) =>
+  apiRequest(`${API_ENDPOINTS.REQUESTS}${buildQuery(filters)}`);
 
-export async function getAdminRequests(filters = {}) {
-  const query = new URLSearchParams(filters).toString();
-  return apiRequest(`${API_ENDPOINTS.ADMIN}/requests${query ? '?' + query : ''}`);
-}
+export const getRequest = (id) =>
+  apiRequest(`${API_ENDPOINTS.REQUESTS}/${id}`);
 
-export async function getRequest(id) {
-  return apiRequest(`${API_ENDPOINTS.REQUESTS}/${id}`);
-}
-
-export async function createRequest(payload) {
-  return apiRequest(`${API_ENDPOINTS.REQUESTS}`, {
+export const createRequest = (payload) =>
+  apiRequest(API_ENDPOINTS.REQUESTS, {
     method: 'POST',
     body: payload,
-    skipDedup: true,
   });
-}
 
-export async function updateRequest(id, payload) {
-  const response = await apiRequest(`${API_ENDPOINTS.REQUESTS}/${id}`, {
+export const updateRequest = (id, payload) =>
+  apiRequest(`${API_ENDPOINTS.REQUESTS}/${id}`, {
     method: 'PUT',
     body: payload,
-    skipDedup: true,
   });
-  console.log(`[API] Request status updated: ${payload.status}`, { requestId: id, response });
-  return response;
-}
 
-export async function deleteRequest(id) {
-  return apiRequest(`${API_ENDPOINTS.REQUESTS}/${id}`, {
+export const deleteRequest = (id) =>
+  apiRequest(`${API_ENDPOINTS.REQUESTS}/${id}`, {
     method: 'DELETE',
-    skipDedup: true,
   });
-}
 
-export async function approveRequest(id, preparationLocation = '') {
-  const response = await apiRequest(`${API_ENDPOINTS.ADMIN}/requests/${id}/approve`, {
+export const startReviewRequest = (id) =>
+  apiRequest(`${API_ENDPOINTS.REQUESTS}/${id}/start-review`, {
+    method: 'PUT',
+  });
+
+export const generateDocumentRequest = (id) =>
+  apiRequest(`${API_ENDPOINTS.REQUESTS}/${id}/generate-document`, {
+    method: 'PUT',
+  });
+
+export const getRequestDocument = (id) =>
+  apiRequest(`${API_ENDPOINTS.REQUESTS}/${id}/document`);
+
+export const getRequestLocation = (id) =>
+  apiRequest(`${API_ENDPOINTS.REQUESTS}/${id}/location`);
+
+
+// ==================== ADMIN ====================
+export const getAdminRequests = (filters = {}) =>
+  apiRequest(`${API_ENDPOINTS.ADMIN}/requests${buildQuery(filters)}`);
+
+export const approveRequest = (id, preparationLocation = '') =>
+  apiRequest(`${API_ENDPOINTS.ADMIN}/requests/${id}/approve`, {
     method: 'PUT',
     body: { preparationLocation },
-    skipDedup: true,
   });
-  console.log(`[API] Request approved`, { requestId: id });
-  return response;
-}
 
-export async function startReviewRequest(id) {
-  const response = await apiRequest(`${API_ENDPOINTS.REQUESTS}/${id}/start-review`, {
+
+// ==================== NOTIFICATIONS ====================
+export const getNotifications = (unreadOnly = false, limit = 50, offset = 0) =>
+  apiRequest(
+    `${API_ENDPOINTS.NOTIFICATIONS}${buildQuery({
+      unreadOnly: unreadOnly ? 'true' : '',
+      limit,
+      offset,
+    })}`
+  );
+
+export const getUnreadNotificationCount = () =>
+  apiRequest(`${API_ENDPOINTS.NOTIFICATIONS}/unread/count`);
+
+export const markNotificationAsRead = (id) =>
+  apiRequest(`${API_ENDPOINTS.NOTIFICATIONS}/${id}/read`, {
     method: 'PUT',
-    skipDedup: true,
   });
-  console.log(`[API] Request moved to in_review`, { requestId: id });
-  return response;
-}
 
-export async function generateDocumentRequest(id) {
-  const response = await apiRequest(`${API_ENDPOINTS.REQUESTS}/${id}/generate-document`, {
+export const markAllNotificationsRead = () =>
+  apiRequest(`${API_ENDPOINTS.NOTIFICATIONS}/read-all`, {
     method: 'PUT',
-    skipDedup: true,
   });
-  console.log(`[API] Document generated`, { requestId: id });
-  return response;
-}
 
-export async function getRequestWithHistory(id) {
-  return apiRequest(`${API_ENDPOINTS.REQUESTS}/${id}/history`);
-}
+export const deleteNotification = (id) =>
+  apiRequest(`${API_ENDPOINTS.NOTIFICATIONS}/${id}`, {
+    method: 'DELETE',
+  });
 
-export async function getRequestDocument(id) {
-  return apiRequest(`${API_ENDPOINTS.REQUESTS}/${id}/document`);
-}
 
-export async function downloadRequestDocument(id, fileName = 'document.pdf') {
-  const url = `${BASE_URL}${API_ENDPOINTS.REQUESTS}/${id}/download`;
+// ==================== TASKS ====================
+export const getTask = (id) =>
+  apiRequest(`${API_ENDPOINTS.TASKS}/${id}`);
+
+export const getAllTasks = () =>
+  apiRequest(API_ENDPOINTS.TASKS);
+
+export const createTask = (task) =>
+  apiRequest(API_ENDPOINTS.TASKS, {
+    method: 'POST',
+    body: task,
+  });
+
+export const updateTask = (id, data) =>
+  apiRequest(`${API_ENDPOINTS.TASKS}/${id}`, {
+    method: 'PUT',
+    body: data,
+  });
+
+export const deleteTask = (id) =>
+  apiRequest(`${API_ENDPOINTS.TASKS}/${id}`, {
+    method: 'DELETE',
+  });
+
+
+// ==================== FILE UPLOAD ====================
+export const uploadDocument = async (id, file) => {
+  const formData = new FormData();
+  formData.append('document', file);
+
   const token = localStorage.getItem('token');
 
-  const response = await fetch(url, {
-    method: 'GET',
-    headers: {
-      ...(token && { Authorization: `Bearer ${token}` }),
-    },
-  });
+  const res = await fetch(
+    `${BASE_URL}${API_ENDPOINTS.REQUESTS}/${id}/document`,
+    {
+      method: 'POST',
+      headers: token ? { Authorization: `Bearer ${token}` } : {},
+      body: formData,
+    }
+  );
 
-  if (!response.ok) {
-    const error = await response.json().catch(() => ({ message: 'Download failed' }));
-    throw new ApiError(error.message || 'Download failed', response.status);
+  if (!res.ok) {
+    const text = await res.text().catch(() => '');
+    throw new Error(text || 'Upload failed');
   }
 
-  const blob = await response.blob();
-  const downloadUrl = window.URL.createObjectURL(blob);
+  return res.json();
+};
+
+
+// ==================== DOWNLOAD ====================
+export const downloadRequestDocument = async (id, fileName = 'document.pdf') => {
+  const token = localStorage.getItem('token');
+
+  const res = await fetch(
+    `${BASE_URL}${API_ENDPOINTS.REQUESTS}/${id}/download`,
+    {
+      method: 'GET',
+      headers: token ? { Authorization: `Bearer ${token}` } : {},
+    }
+  );
+
+  if (!res.ok) {
+    const text = await res.text().catch(() => '');
+    throw new Error(text || 'Download failed');
+  }
+
+  const blob = await res.blob();
+  const url = window.URL.createObjectURL(blob);
+
   const a = document.createElement('a');
-  a.href = downloadUrl;
+  a.href = url;
   a.download = fileName;
   document.body.appendChild(a);
   a.click();
-  window.URL.revokeObjectURL(downloadUrl);
-  document.body.removeChild(a);
-}
+  a.remove();
 
-// ==================== NOTIFICATIONS ====================
-export async function getNotifications(unreadOnly = false, limit = 50, offset = 0) {
-  const query = new URLSearchParams({
-    ...(unreadOnly && { unreadOnly: 'true' }),
-    limit,
-    offset,
-  }).toString();
-  return apiRequest(`${API_ENDPOINTS.NOTIFICATIONS}${query ? '?' + query : ''}`);
-}
+  window.URL.revokeObjectURL(url);
+};
 
-export async function getUnreadNotificationCount() {
-  return apiRequest(`${API_ENDPOINTS.NOTIFICATIONS}/unread/count`);
-}
 
-export async function markNotificationAsRead(id) {
-  return apiRequest(`${API_ENDPOINTS.NOTIFICATIONS}/${id}/read`, {
-    method: 'PUT',
-    skipDedup: true,
-  });
-}
-
-export async function markAllNotificationsRead() {
-  return apiRequest(`${API_ENDPOINTS.NOTIFICATIONS}/read-all`, {
-    method: 'PUT',
-    skipDedup: true,
-  });
-}
-
-export async function deleteNotification(id) {
-  return apiRequest(`${API_ENDPOINTS.NOTIFICATIONS}/${id}`, {
-    method: 'DELETE',
-    skipDedup: true,
-  });
-}
-
-// ==================== TASKS ====================
-export async function createTask(task) {
-  return apiRequest(`${API_ENDPOINTS.TASKS}`, {
-    method: 'POST',
-    body: task,
-    skipDedup: true,
-  });
-}
-
-export async function getMyTasks(filters = {}) {
-  const query = new URLSearchParams(filters).toString();
-  return apiRequest(`${API_ENDPOINTS.TASKS}/my${query ? '?' + query : ''}`);
-}
-
-export async function getAllTasks(filters = {}) {
-  const query = new URLSearchParams(filters).toString();
-  return apiRequest(`${API_ENDPOINTS.TASKS}${query ? '?' + query : ''}`);
-}
-
-export async function getTask(id) {
-  return apiRequest(`${API_ENDPOINTS.TASKS}/${id}`);
-}
-
-export async function updateTask(id, data) {
-  return apiRequest(`${API_ENDPOINTS.TASKS}/${id}`, {
-    method: 'PUT',
-    body: data,
-    skipDedup: true,
-  });
-}
-
-export async function deleteTask(id) {
-  return apiRequest(`${API_ENDPOINTS.TASKS}/${id}`, {
-    method: 'DELETE',
-    skipDedup: true,
-  });
-}
-
-// ==================== DOCUMENTS ====================
-export async function requestDocument(documentData) {
-  return apiRequest(`${API_ENDPOINTS.DOCUMENTS}`, {
-    method: 'POST',
-    body: documentData,
-    skipDedup: true,
-  });
-}
-
-export async function getMyDocuments() {
-  return apiRequest(`${API_ENDPOINTS.DOCUMENTS}/my`);
-}
-
-export async function getAllDocuments(filters = {}) {
-  const query = new URLSearchParams(filters).toString();
-  return apiRequest(`${API_ENDPOINTS.DOCUMENTS}${query ? '?' + query : ''}`);
-}
-
-export async function getDocument(id) {
-  return apiRequest(`${API_ENDPOINTS.DOCUMENTS}/${id}`);
-}
-
-export async function updateDocumentStatus(id, status, rejectionReason = null) {
-  return apiRequest(`${API_ENDPOINTS.DOCUMENTS}/${id}/status`, {
-    method: 'PUT',
-    body: { status, rejectionReason },
-    skipDedup: true,
-  });
-}
-
-export async function uploadDocument(id, file, extraFields = {}) {
-  const formData = new FormData();
-  formData.append('document', file);
-  Object.entries(extraFields).forEach(([key, value]) => {
-    if (value !== undefined && value !== null) {
-      formData.append(key, value);
-    }
-  });
-
-  const token = localStorage.getItem('token');
-
-  try {
-    const response = await fetch(`${BASE_URL}${API_ENDPOINTS.REQUESTS}/${id}/document`, {
-      method: 'POST',
-      headers: {
-        ...(token && { Authorization: `Bearer ${token}` }),
-      },
-      body: formData,
-    });
-
-    if (response.status === 401) {
-      localStorage.removeItem('token');
-      window.location.href = '/login';
-    }
-
-    if (!response.ok) {
-      const data = await response.json();
-      throw new ApiError(data?.message || response.statusText, response.status);
-    }
-
-    const responseData = await response.json();
-    const normalized = normalizeResponse(responseData);
-    return normalizeResponse(normalized.request || normalized.data || normalized);
-  } catch (error) {
-    throw new ApiError(error.message || 'Upload failed');
-  }
-}
-
-export async function downloadDocument(id, fileName) {
-  const token = localStorage.getItem('token');
-  let url = `${BASE_URL}${API_ENDPOINTS.DOCUMENTS}/${id}/download`;
-
-  if (token) {
-    url += `?token=${token}`;
-  }
-
-  const link = document.createElement('a');
-  link.href = url;
-  link.download = fileName || 'document.pdf';
-  document.body.appendChild(link);
-  link.click();
-  document.body.removeChild(link);
-}
-
-export async function deleteDocument(id) {
-  return apiRequest(`${API_ENDPOINTS.DOCUMENTS}/${id}`, {
-    method: 'DELETE',
-    skipDedup: true,
-  });
-}
-
-export { ApiError, getErrorMessage } from '../utils/api.config';
+// ==================== EXPORT ERRORS ====================
+export { ApiError, getErrorMessage };

@@ -335,12 +335,15 @@ const getDocument = async (req, res) => {
 
     if (!['approved', 'document_generated'].includes(request.status) || !request.pdfUrl) {
       console.log('[PDF Download] Document not ready. Status:', request.status);
+      const preparationLocation = request.preparationLocation || 'Arrondissement Yaacoub El Mansour - Rabat';
       return res.json({
         success: true,
         data: {
           requestStatus: request.status,
           documentPDF: null,
-          pickupLocation: 'Arrondissement Yaacoub El Mansour - Rabat',
+          pickupLocation: preparationLocation,
+          preparationLocation: preparationLocation,
+          documentGenerated: request.status === 'document_generated',
         },
       });
     }
@@ -350,17 +353,45 @@ const getDocument = async (req, res) => {
       console.warn('[PDF Download] Invalid PDF URL format:', request.pdfUrl.substring(0, 50));
     }
 
+    const preparationLocation = request.preparationLocation || 'Arrondissement Yaacoub El Mansour - Rabat';
     return res.json({
       success: true,
       data: {
         requestStatus: request.status,
         documentPDF: request.documentUrl || request.pdfUrl,
-        pickupLocation: 'Arrondissement Yaacoub El Mansour - Rabat',
-        preparationLocation: request.preparationLocation || 'Arrondissement Yaacoub El Mansour - Rabat',
+        pickupLocation: preparationLocation,
+        preparationLocation: preparationLocation,
+        documentGenerated: request.status === 'document_generated',
       },
     });
   } catch (err) {
     console.error('[PDF Download] Error:', err);
+    res.status(500).json({ success: false, message: 'Server error' });
+  }
+};
+
+const getLocation = async (req, res) => {
+  try {
+    const request = await Request.findByPk(req.params.id);
+    if (!request) return res.status(404).json({ success: false, message: 'Not found' });
+
+    if (!isAdminOrEmployee(req.user) && request.userId !== req.user.id) {
+      return res.status(403).json({ success: false, message: 'Forbidden' });
+    }
+
+    const preparationLocation = request.preparationLocation || 'Arrondissement Yaacoub El Mansour - Rabat';
+    
+    return res.json({
+      success: true,
+      data: {
+        preparationLocation,
+        pickupLocation: preparationLocation,
+        status: request.status,
+        documentGenerated: request.status === 'document_generated',
+      },
+    });
+  } catch (err) {
+    console.error('Get location error:', err);
     res.status(500).json({ success: false, message: 'Server error' });
   }
 };
@@ -540,6 +571,7 @@ module.exports = {
   reject,
   remove,
   getDocument,
+  getLocation,
   uploadDocument,
   startReview,
   generateDocument,

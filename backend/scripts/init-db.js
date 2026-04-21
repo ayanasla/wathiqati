@@ -15,7 +15,8 @@ async function initializeDatabase() {
 
     // Create admin user for Yaacoub El Mansour municipality
     const admin = await User.create({
-      name: 'Ahmed Bennani',
+      firstName: 'Ahmed',
+      lastName: 'Bennani',
       email: 'admin@yaacoub.ma',
       password: 'Admin123!',
       role: 'admin',
@@ -25,18 +26,20 @@ async function initializeDatabase() {
 
     // Create regular users
     const user1 = await User.create({
-      name: 'Fatima Alaoui',
+      firstName: 'Fatima',
+      lastName: 'Alaoui',
       email: 'fatima.alaoui@email.com',
       password: 'Password123!',
-      role: 'user',
+      role: 'citizen',
       isActive: true
     });
 
     const user2 = await User.create({
-      name: 'Mohammed Tazi',
+      firstName: 'Mohammed',
+      lastName: 'Tazi',
       email: 'mohammed.tazi@email.com',
       password: 'Password123!',
-      role: 'user',
+      role: 'citizen',
       isActive: true
     });
 

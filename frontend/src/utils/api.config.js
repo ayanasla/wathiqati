@@ -7,7 +7,7 @@
  * - Token expiration & refresh
  */
 
-export const BASE_URL = process.env.REACT_APP_API_URL || 'http://localhost:5002';
+export const BASE_URL = process.env.REACT_APP_API_URL || 'http://localhost:5001';
 
 console.log('API Config - BASE_URL:', BASE_URL);
 console.log('API Config - REACT_APP_API_URL:', process.env.REACT_APP_API_URL);
