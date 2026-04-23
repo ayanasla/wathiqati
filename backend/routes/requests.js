@@ -17,4 +17,10 @@ router.put('/:id/generate-document', authenticate, requireEmployeeOrAdmin, reque
 router.get('/:id/history', authenticate, requestController.getRequestWithHistory);
 router.delete('/:id', authenticate, requestController.remove); // owner or admin
 
+// ============ TRACKING ROUTES ============
+router.get('/tracking/steps/all', requestController.getAllTrackingSteps);
+router.get('/:id/tracking', authenticate, requestController.getTracking);
+router.get('/:id/tracking/history', authenticate, requestController.getTrackingHistory);
+router.put('/:id/tracking', authenticate, requireEmployeeOrAdmin, requestController.updateTracking);
+
 module.exports = router;

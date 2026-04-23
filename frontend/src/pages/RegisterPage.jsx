@@ -7,7 +7,8 @@ import { Label } from '../components/ui/label';
 
 export default function RegisterPage() {
   const [formData, setFormData] = useState({
-    name: '',
+    firstName: '',
+    lastName: '',
     email: '',
     password: '',
     confirmPassword: '',
@@ -44,18 +45,34 @@ export default function RegisterPage() {
       return;
     }
 
-    if (!formData.name.trim()) {
-      setError('Name is required');
+    if (!formData.firstName.trim()) {
+      setError('First name is required');
+      return;
+    }
+
+    if (!formData.lastName.trim()) {
+      setError('Last name is required');
       return;
     }
 
     setLoading(true);
 
     try {
-      await register(formData.name, formData.email, formData.password);
-      navigate('/login?message=Registration successful. Please log in.');
+      const result = await register({
+        firstName: formData.firstName,
+        lastName: formData.lastName,
+        email: formData.email,
+        password: formData.password,
+      });
+
+      if (result?.success) {
+        navigate('/');
+      } else {
+        setError(result?.error || 'Registration failed');
+      }
     } catch (err) {
-      // Error is already set in AuthContext
+      const errorMessage = err.message || 'Registration failed';
+      setError(errorMessage);
       console.error('Registration failed:', err);
     } finally {
       setLoading(false);
@@ -78,13 +95,27 @@ export default function RegisterPage() {
 
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
-            <Label htmlFor="name">Full Name</Label>
+            <Label htmlFor="firstName">First Name</Label>
             <Input
-              id="name"
-              name="name"
+              id="firstName"
+              name="firstName"
               type="text"
-              placeholder="John Doe"
-              value={formData.name}
+              placeholder="John"
+              value={formData.firstName}
+              onChange={handleChange}
+              required
+              disabled={loading}
+            />
+          </div>
+
+          <div>
+            <Label htmlFor="lastName">Last Name</Label>
+            <Input
+              id="lastName"
+              name="lastName"
+              type="text"
+              placeholder="Doe"
+              value={formData.lastName}
               onChange={handleChange}
               required
               disabled={loading}

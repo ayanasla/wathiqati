@@ -19,6 +19,7 @@ router.post('/login', loginValidation, login);
 
 // Protected routes
 router.get('/profile', authenticate, getProfile);
+router.get('/me', authenticate, getProfile);  // Alias for frontend compatibility
 router.put('/profile', authenticate, updateProfileValidation, updateProfile);
 router.post('/change-password', authenticate, changePasswordValidation, changePassword);
 

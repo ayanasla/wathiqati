@@ -40,6 +40,12 @@ module.exports = (sequelize) => {
       allowNull: false,
       comment: 'Current status of the request in the workflow',
     },
+    trackingStatus: {
+      type: DataTypes.ENUM('submitted', 'in_processing', 'under_validation', 'validated', 'ready_for_pickup', 'rejected'),
+      defaultValue: 'submitted',
+      allowNull: false,
+      comment: 'Current tracking/location step of the request',
+    },
     municipality: {
       type: DataTypes.STRING(100),
       allowNull: false,

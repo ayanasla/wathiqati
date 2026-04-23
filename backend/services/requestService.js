@@ -146,6 +146,8 @@ class RequestService {
       if (approvalData.preparationLocation) {
         request.preparationLocation = approvalData.preparationLocation;
       }
+      // Explicitly save all fields before changing status to ensure data preservation
+      await request.save();
 
       await this.changeStatus(request, REQUEST_STATES.APPROVED);
 
@@ -299,6 +301,8 @@ class RequestService {
       if (!request.preparationLocation) {
         request.preparationLocation = 'Arrondissement Yaacoub El Mansour - Rabat';
       }
+      // Explicitly save all fields before changing status to ensure data preservation
+      await request.save();
 
       await this.changeStatus(request, REQUEST_STATES.DOCUMENT_GENERATED);
 
@@ -354,6 +358,8 @@ class RequestService {
       if (metadata.preparationLocation) {
         request.preparationLocation = metadata.preparationLocation;
       }
+      // Explicitly save all fields before changing status to ensure data preservation
+      await request.save();
 
       await this.changeStatus(request, REQUEST_STATES.DOCUMENT_GENERATED);
 

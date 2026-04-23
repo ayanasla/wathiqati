@@ -532,6 +532,137 @@ const downloadDocument = async (req, res) => {
   }
 };
 
+// ============ TRACKING ENDPOINTS ============
+
+const TrackingService = require('../services/trackingService');
+
+const getTracking = async (req, res) => {
+  try {
+    const requestId = req.params.id;
+    const request = await Request.findByPk(requestId);
+
+    if (!request) {
+      return res.status(404).json({ success: false, message: 'Request not found' });
+    }
+
+    // Check authorization: user must be owner or admin
+    if (req.user.role !== 'admin' && request.userId !== req.user.id) {
+      return res.status(403).json({ success: false, message: 'Forbidden' });
+    }
+
+    const trackingData = await TrackingService.getRequestTracking(requestId);
+
+    if (!trackingData.success) {
+      return res.status(400).json(trackingData);
+    }
+
+    res.json(trackingData);
+  } catch (err) {
+    console.error('Get tracking error:', err);
+    res.status(500).json({
+      success: false,
+      message: 'Server error retrieving tracking information'
+    });
+  }
+};
+
+const updateTracking = async (req, res) => {
+  try {
+    const requestId = req.params.id;
+    const { trackingStatus, notes } = req.body;
+    const request = await Request.findByPk(requestId);
+
+    if (!request) {
+      return res.status(404).json({ success: false, message: 'Request not found' });
+    }
+
+    // Only admin or employees can update tracking status
+    if (!isAdminOrEmployee(req.user)) {
+      return res.status(403).json({
+        success: false,
+        message: 'Only admin or employee can update tracking status'
+      });
+    }
+
+    const result = await TrackingService.updateTrackingStatus(requestId, trackingStatus, notes);
+
+    if (!result.success) {
+      return res.status(400).json(result);
+    }
+
+    // Send notification to user
+    if (request.userId) {
+      await NotificationService.createNotification({
+        userId: request.userId,
+        type: 'request_tracking_updated',
+        title: 'Statut de suivi mis à jour',
+        message: `Le statut de votre demande est maintenant: ${TrackingService.TRACKING_STEPS[trackingStatus].label}`,
+        relatedRequestId: requestId,
+      }).catch(err => console.error('Notification error:', err));
+    }
+
+    console.log(`[Tracking] Updated request ${requestId} to ${trackingStatus}`);
+
+    res.json({
+      success: true,
+      message: 'Tracking status updated successfully',
+      data: result.data
+    });
+  } catch (err) {
+    console.error('Update tracking error:', err);
+    res.status(500).json({
+      success: false,
+      message: 'Server error updating tracking status'
+    });
+  }
+};
+
+const getTrackingHistory = async (req, res) => {
+  try {
+    const requestId = req.params.id;
+    const request = await Request.findByPk(requestId);
+
+    if (!request) {
+      return res.status(404).json({ success: false, message: 'Request not found' });
+    }
+
+    // Check authorization
+    if (req.user.role !== 'admin' && request.userId !== req.user.id) {
+      return res.status(403).json({ success: false, message: 'Forbidden' });
+    }
+
+    const historyData = await TrackingService.getTrackingHistory(requestId);
+
+    if (!historyData.success) {
+      return res.status(400).json(historyData);
+    }
+
+    res.json(historyData);
+  } catch (err) {
+    console.error('Get tracking history error:', err);
+    res.status(500).json({
+      success: false,
+      message: 'Server error retrieving tracking history'
+    });
+  }
+};
+
+const getAllTrackingSteps = async (req, res) => {
+  try {
+    const steps = TrackingService.getAllSteps();
+    res.json({
+      success: true,
+      data: steps
+    });
+  } catch (err) {
+    console.error('Get all tracking steps error:', err);
+    res.status(500).json({
+      success: false,
+      message: 'Server error retrieving tracking steps'
+    });
+  }
+};
+
 module.exports = {
   create,
   list,
@@ -545,4 +676,8 @@ module.exports = {
   generateDocument,
   getRequestWithHistory,
   downloadDocument,
+  getTracking,
+  updateTracking,
+  getTrackingHistory,
+  getAllTrackingSteps,
 };

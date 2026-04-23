@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { getRequest } from '../api';
 import { useLanguage } from '../components/LanguageContext';
 import StatusBadge from '../components/ui/StatusBadge';
+import RequestTrackingTimeline from '../components/RequestTrackingTimeline';
 import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/card';
 import { Button } from '../components/ui/button';
 import { Skeleton } from '../components/ui/skeleton';
@@ -9,7 +10,7 @@ import { format } from 'date-fns';
 import { useNavigate, useParams } from 'react-router-dom';
 import { createPageUrl } from '../utils';
 import { motion } from 'framer-motion';
-import { ArrowLeft, ArrowRight, Download, User, Users, Phone, Calendar, CreditCard, MapPin, Map } from 'lucide-react';
+import { ArrowLeft, ArrowRight, Download, User, Users, Phone, Calendar, CreditCard, MapPin } from 'lucide-react';
 
 export default function RequestDetails() {
   const { t, isRTL } = useLanguage();
@@ -85,29 +86,18 @@ export default function RequestDetails() {
             )}
           </div>
         </div>
-        {((request.status === 'approved' || request.status === 'document_generated') && request.preparationLocation) && (
-          <div className="mt-6 p-6 bg-gradient-to-r from-emerald-50 to-green-50 border-2 border-emerald-200 rounded-2xl shadow-sm">
-            <div className="flex items-start gap-3">
-              <div className="w-8 h-8 rounded-full bg-emerald-100 flex items-center justify-center flex-shrink-0">
-                <span className="text-lg">📍</span>
-              </div>
-              <div className="flex-1">
-                <h3 className="text-sm font-bold text-emerald-800 mb-1">{t('preparationLocation')}</h3>
-                <p className="text-base font-semibold text-emerald-900 mb-2">{request.preparationLocation}</p>
-                <p className="text-sm text-emerald-700 mb-3">{t('collectionInstructions')}</p>
-                <a
-                  href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(request.preparationLocation)}`}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="inline-flex items-center gap-2 px-3 py-2 bg-emerald-600 hover:bg-emerald-700 text-white text-sm font-medium rounded-lg transition-colors"
-                >
-                  <Map className="w-4 h-4" />
-                  {t('viewOnMap') || 'View on Map'}
-                </a>
-              </div>
-            </div>
+
+        {/* Simplified Pickup Information Section */}
+        {((request.status?.trim() === 'approved' || request.status?.trim() === 'document_generated') || request.preparationLocation?.trim()) && (
+          <div className="mt-8">
+            <Card className="border-0 shadow-md">
+              <CardContent className="pt-6">
+                <RequestTrackingTimeline request={request} />
+              </CardContent>
+            </Card>
           </div>
         )}
+
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           <Card className="border-0 shadow-md">
             <CardHeader className="pb-0">

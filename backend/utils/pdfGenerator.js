@@ -93,12 +93,12 @@ function generateRequestPDF(request) {
         ['Submission Date:', formatDate(request.createdAt)],
         ['Last Updated:', formatDate(request.updatedAt)],
         ['Municipality:', request.municipality || 'Not specified'],
-        ['Preparation Location:', 'Arrondissement Yaacoub El Mansour - Rabat'],
+        ['Preparation Location:', request.preparationLocation || 'Not specified'],
       ];
 
       requestInfo.forEach(([label, value]) => {
         doc.text(label, { continued: true }).font('Helvetica-Bold');
-        doc.font('Helvetica').text(' Arrondissement Yaacoub El Mansour - Rabat');
+        doc.font('Helvetica').text(` ${value}`);
         doc.moveDown(0.25);
       });
 
@@ -174,9 +174,6 @@ function generateRequestPDF(request) {
         doc.moveDown(0.2);
         doc.text('Approved Date:', { continued: true }).font('Helvetica-Bold');
         doc.font('Helvetica').text(` ${formatDate(request.updatedAt)}`);
-        doc.moveDown(0.2);
-        doc.text('Pickup Location:', { continued: true }).font('Helvetica-Bold');
-        doc.font('Helvetica').text(` ${request.preparationLocation || 'Arrondissement Yaacoub El Mansour - Rabat'}`);
         doc.moveDown(0.5);
       } else if (request.status === 'rejected') {
         doc.fontSize(12).font('Helvetica-Bold').text('REJECTION INFORMATION', { underline: true });
@@ -191,6 +188,50 @@ function generateRequestPDF(request) {
           doc.moveDown(0.2);
         }
       }
+
+      // ========== DOCUMENT PICKUP LOCATION (HIGHLIGHTED SECTION) ==========
+      doc.moveDown(0.5);
+
+      // Highlighted background for pickup location
+      const pageWidth = doc.page.width - 2 * doc.page.margins.left;
+      const highlightHeight = 60;
+      const highlightY = doc.y;
+
+      // Draw highlighted background
+      doc.rect(doc.page.margins.left, highlightY, pageWidth, highlightHeight)
+         .fill('#f0f9ff'); // Light blue background
+
+      // Reset fill color for text
+      doc.fillColor('black');
+
+      // Title
+      doc.fontSize(14).font('Helvetica-Bold').fillColor('#1e40af')
+         .text('📍 DOCUMENT PICKUP LOCATION', doc.page.margins.left + 10, highlightY + 8);
+
+      // Location
+      doc.moveDown(0.3);
+      const locationText = request.preparationLocation && request.preparationLocation.trim()
+        ? request.preparationLocation
+        : 'Location not available';
+
+      doc.fontSize(12).font('Helvetica-Bold').fillColor('#1f2937')
+         .text(locationText, doc.page.margins.left + 10);
+
+      // Instruction
+      doc.moveDown(0.2);
+      doc.fontSize(10).font('Helvetica').fillColor('#374151')
+         .text('Go to this location to collect your document.', doc.page.margins.left + 10);
+
+      // Map instruction (only show if location is available)
+      if (request.preparationLocation && request.preparationLocation.trim()) {
+        doc.moveDown(0.2);
+        doc.fontSize(9).font('Helvetica-Bold').fillColor('#059669')
+           .text('💡 View on Map: Search for this address on Google Maps to get directions', doc.page.margins.left + 10);
+      }
+
+      // Reset position after highlighted section
+      doc.y = highlightY + highlightHeight + 10;
+      doc.fillColor('black');
 
       // ========== ADMIN NOTES ==========
       if (request.adminNotes) {

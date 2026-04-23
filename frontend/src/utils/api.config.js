@@ -132,21 +132,33 @@ export async function apiRequest(url, options = {}) {
 
         // Normalize response data
         const normalized = normalizeResponse(data);
-        if (normalized && typeof normalized === 'object' && normalized.success === true) {
-          // If the response contains a token, preserve the full auth payload
+        
+        // Handle different response structures
+        if (normalized && typeof normalized === 'object') {
+          // If response contains success flag, check it
+          if ('success' in normalized && normalized.success === false) {
+            throw new ApiError(normalized.message || 'Request failed', response.status, normalized);
+          }
+          
+          // Return full response if it contains authentication data
           if ('token' in normalized) {
             return normalized;
           }
+          
+          // Extract user from user property
+          if ('user' in normalized && !('data' in normalized) && !('requests' in normalized)) {
+            return normalized;
+          }
+          
+          // Extract data from nested structures
           if ('data' in normalized) {
             return normalizeResponse(normalized.data);
           }
           if ('requests' in normalized) {
             return normalizeResponse(normalized.requests);
           }
-          if ('user' in normalized) {
-            return normalized.user;
-          }
         }
+        
         return normalized;
       } catch (error) {
         lastError = error;

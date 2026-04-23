@@ -10,6 +10,7 @@ const authenticate = async (req, res, next) => {
     const authHeader = req.headers.authorization;
 
     if (!authHeader) {
+      console.warn('Missing Authorization header');
       return res.status(401).json({
         success: false,
         message: 'Authorization header missing'
@@ -19,6 +20,7 @@ const authenticate = async (req, res, next) => {
     // Validate Bearer token format
     const parts = authHeader.split(' ');
     if (parts.length !== 2 || parts[0].toLowerCase() !== 'bearer') {
+      console.warn('Invalid Authorization header format:', authHeader.substring(0, 20));
       return res.status(401).json({
         success: false,
         message: 'Invalid Authorization header format. Expected: Bearer <token>'
@@ -26,10 +28,34 @@ const authenticate = async (req, res, next) => {
     }
 
     const token = parts[1];
-    const decoded = jwt.verify(token, process.env.JWT_SECRET);
+
+    // Verify JWT token
+    let decoded;
+    try {
+      decoded = jwt.verify(token, process.env.JWT_SECRET);
+    } catch (jwtError) {
+      if (jwtError.name === 'TokenExpiredError') {
+        return res.status(401).json({
+          success: false,
+          message: 'Token expired',
+          code: 'TOKEN_EXPIRED'
+        });
+      }
+      if (jwtError.name === 'JsonWebTokenError') {
+        console.warn('JWT verification failed:', jwtError.message);
+        return res.status(401).json({
+          success: false,
+          message: 'Invalid token'
+        });
+      }
+      throw jwtError;
+    }
+
+    // Fetch user from database
     const user = await User.findByPk(decoded.id);
 
     if (!user) {
+      console.warn('User not found for token, ID:', decoded.id);
       return res.status(401).json({
         success: false,
         message: 'User not found'
@@ -43,22 +69,12 @@ const authenticate = async (req, res, next) => {
       });
     }
 
+    // Attach user to request (handle both Sequelize and plain objects)
     req.user = user.toJSON ? user.toJSON() : user;
+    req.userId = decoded.id;
     next();
   } catch (error) {
-    if (error.name === 'TokenExpiredError') {
-      return res.status(401).json({
-        success: false,
-        message: 'Token expired'
-      });
-    }
-    if (error.name === 'JsonWebTokenError') {
-      return res.status(401).json({
-        success: false,
-        message: 'Invalid token'
-      });
-    }
-    console.error('Auth error:', error);
+    console.error('Auth middleware error:', error.message);
     return res.status(401).json({
       success: false,
       message: 'Authentication failed'
@@ -71,7 +87,7 @@ const authenticate = async (req, res, next) => {
  * Ensures user has admin role
  */
 const requireAdmin = (req, res, next) => {
-  if (req.user.role !== 'admin') {
+  if (!req.user || req.user.role !== 'admin') {
     return res.status(403).json({
       success: false,
       message: 'Admin access required'

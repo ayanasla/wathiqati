@@ -1,102 +1,88 @@
 require('dotenv').config();
-const { sequelize, User, Request } = require('../models');
+const { sequelize, User } = require('../models');
+const bcrypt = require('bcrypt');
 
 async function initializeDatabase() {
   try {
     console.log('Connecting to database...');
     await sequelize.authenticate();
-    console.log('Database connection successful');
+    console.log('✅ Database connection successful');
 
-    console.log('Syncing database models...');
-    await sequelize.sync({ force: true }); // Force sync for clean setup
-    console.log('Database models synced');
+    console.log('\nSyncing database models...');
+    await sequelize.sync();
+    console.log('✅ Database models synced');
 
-    console.log('Creating demo users...');
+    console.log('\nCreating demo users...');
 
-    // Create admin user for Yaacoub El Mansour municipality
-    const admin = await User.create({
-      name: 'Ahmed Bennani',
-      email: 'admin@yaacoub.ma',
-      password: 'Admin123!',
-      role: 'admin',
-      municipality: 'Yaacoub El Mansour',
-      isActive: true
-    });
+    // ================= ADMIN =================
+    let admin = await User.findOne({ where: { email: 'admin@yaacoub.ma' } });
 
-    // Create regular users
-    const user1 = await User.create({
-      name: 'Fatima Alaoui',
-      email: 'fatima.alaoui@email.com',
-      password: 'Password123!',
-      role: 'user',
-      isActive: true
-    });
+    if (!admin) {
+      admin = await User.create({
+        firstName: 'Admin',
+        lastName: 'User',
+        email: 'admin@yaacoub.ma',
+        password: await bcrypt.hash('Admin123!', 10),
+        role: 'admin',
+        phone: '+212 XXX XXX XXX',
+        isActive: true
+      });
+      console.log('✅ Admin created');
+    } else {
+      console.log('ℹ️ Admin already exists');
+    }
 
-    const user2 = await User.create({
-      name: 'Mohammed Tazi',
-      email: 'mohammed.tazi@email.com',
-      password: 'Password123!',
-      role: 'user',
-      isActive: true
-    });
+    // ================= EMPLOYEE =================
+    let employee = await User.findOne({ where: { email: 'employee@yaacoub.ma' } });
 
-    console.log('Creating demo requests...');
+    if (!employee) {
+      employee = await User.create({
+        firstName: 'Employee',
+        lastName: 'User',
+        email: 'employee@yaacoub.ma',
+        password: await bcrypt.hash('Employee123!', 10),
+        role: 'employee',
+        department: 'Civil Registry',
+        position: 'Document Officer',
+        phone: '+212 XXX XXX XXX',
+        isActive: true
+      });
+      console.log('✅ Employee created');
+    } else {
+      console.log('ℹ️ Employee already exists');
+    }
 
-    // Create some sample requests
-    await Request.create({
-      userId: user1.id,
-      documentType: 'Birth Certificate',
-      requestNumber: 'REQ-001',
-      municipality: 'Yaacoub El Mansour',
-      description: 'Request for birth certificate copy',
-      firstNameFr: 'Fatima',
-      lastNameFr: 'Alaoui',
-      firstNameAr: 'فاطمة',
-      lastNameAr: 'العلوي',
-      dateOfBirth: '1992-04-01',
-      nationalId: 'A123456789',
-      status: 'pending'
-    });
+    // ================= CITIZEN =================
+    let citizen = await User.findOne({ where: { email: 'fatima.alaoui@email.com' } });
 
-    await Request.create({
-      userId: user1.id,
-      documentType: 'ID Card',
-      requestNumber: 'REQ-002',
-      municipality: 'Yaacoub El Mansour',
-      description: 'Renewal of national ID card',
-      firstNameFr: 'Fatima',
-      lastNameFr: 'Alaoui',
-      firstNameAr: 'فاطمة',
-      lastNameAr: 'العلوي',
-      dateOfBirth: '1992-04-01',
-      nationalId: 'A123456789',
-      status: 'pending'
-    });
+    if (!citizen) {
+      citizen = await User.create({
+        firstName: 'Fatima',
+        lastName: 'Alaoui',
+        email: 'fatima.alaoui@email.com',
+        password: await bcrypt.hash('Password123!', 10),
+        role: 'citizen',
+        nationalId: 'A123456789',
+        address: 'Rabat, Morocco',
+        phone: '+212 XXX XXX XXX',
+        isActive: true
+      });
+      console.log('✅ Citizen created');
+    } else {
+      console.log('ℹ️ Citizen already exists');
+    }
 
-    await Request.create({
-      userId: user2.id,
-      documentType: 'Residence Certificate',
-      requestNumber: 'REQ-003',
-      municipality: 'Yaacoub El Mansour',
-      description: 'Certificate of residence for administrative purposes',
-      firstNameFr: 'Mohammed',
-      lastNameFr: 'Tazi',
-      firstNameAr: 'محمد',
-      lastNameAr: 'الطازي',
-      dateOfBirth: '1988-07-20',
-      nationalId: 'B987654321',
-      status: 'pending'
-    });
+    // ================= DISPLAY =================
+    console.log('\n📋 Demo Accounts:');
+    console.log('Admin:    admin@yaacoub.ma / Admin123!');
+    console.log('Employee: employee@yaacoub.ma / Employee123!');
+    console.log('Citizen:  fatima.alaoui@email.com / Password123!');
 
-    console.log('Demo data created successfully!');
-    console.log('\nDemo Accounts:');
-    console.log('Admin: admin@yaacoub.ma / Admin123!');
-    console.log('User1: fatima.alaoui@email.com / Password123!');
-    console.log('User2: mohammed.tazi@email.com / Password123!');
-
+    console.log('\n✅ Database ready!');
     process.exit(0);
+
   } catch (error) {
-    console.error('Database initialization failed:', error);
+    console.error('❌ Database initialization failed:', error);
     process.exit(1);
   }
 }

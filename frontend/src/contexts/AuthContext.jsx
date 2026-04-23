@@ -21,16 +21,32 @@ export const AuthProvider = ({ children }) => {
           setUser(JSON.parse(storedUser));
 
           // Verify token is still valid by fetching user profile
-          const response = await api.getMe();
-          if (response.success) {
-            setUser(response.user);
-            localStorage.setItem('user', JSON.stringify(response.user));
-          } else {
-            // Token invalid, clear storage
+          try {
+            const response = await api.getMe();
+            
+            // Handle both response formats
+            let userData = response;
+            if (response && typeof response === 'object') {
+              // If response has a user property, extract it
+              if (response.user && !response.id) {
+                userData = response.user;
+              }
+            }
+            
+            if (userData && userData.id) {
+              setUser(userData);
+              localStorage.setItem('user', JSON.stringify(userData));
+            } else {
+              // Token invalid, clear storage
+              logout();
+            }
+          } catch (profileErr) {
+            console.warn('Token validation request failed:', profileErr);
+            // Token might be expired, clear and let user log in again
             logout();
           }
         } catch (err) {
-          console.error('Token validation failed:', err);
+          console.error('Auth initialization error:', err);
           logout();
         }
       }
@@ -57,21 +73,36 @@ export const AuthProvider = ({ children }) => {
 
       const response = await api.login(email, password);
 
-      const success = response?.success ?? !!response?.token;
-      if (success) {
-        setToken(response.token);
-        setUser(response.user);
+      // Handle response structure
+      let tokenData = null;
+      let userData = null;
 
-        localStorage.setItem('token', response.token);
-        localStorage.setItem('user', JSON.stringify(response.user));
+      if (response?.token) {
+        tokenData = response.token;
+        userData = response.user || {
+          id: response.id,
+          name: response.name,
+          email: response.email,
+          role: response.role
+        };
+      }
+
+      if (tokenData && userData) {
+        setToken(tokenData);
+        setUser(userData);
+
+        localStorage.setItem('token', tokenData);
+        localStorage.setItem('user', JSON.stringify(userData));
 
         return { success: true };
       } else {
-        setError(response.message || 'Login failed');
-        return { success: false, error: response.message };
+        const errorMsg = response?.message || 'Login failed. Please check your credentials.';
+        setError(errorMsg);
+        return { success: false, error: errorMsg };
       }
     } catch (err) {
       const errorMessage = err.message || 'Login failed';
+      console.error('Login error:', err);
       setError(errorMessage);
       return { success: false, error: errorMessage };
     } finally {
@@ -86,7 +117,7 @@ export const AuthProvider = ({ children }) => {
 
       const response = await api.register(userData);
 
-      if (response.success) {
+      if (response?.token && response?.user) {
         setToken(response.token);
         setUser(response.user);
 
@@ -95,8 +126,9 @@ export const AuthProvider = ({ children }) => {
 
         return { success: true };
       } else {
-        setError(response.message || 'Registration failed');
-        return { success: false, error: response.message };
+        const errorMsg = response?.message || 'Registration failed';
+        setError(errorMsg);
+        return { success: false, error: errorMsg };
       }
     } catch (err) {
       const errorMessage = err.message || 'Registration failed';
@@ -121,13 +153,19 @@ export const AuthProvider = ({ children }) => {
       setError(null);
       const response = await api.updateProfile(profileData);
 
-      if (response.success) {
-        setUser(response.user);
-        localStorage.setItem('user', JSON.stringify(response.user));
+      let updatedUser = response;
+      if (response?.user) {
+        updatedUser = response.user;
+      }
+
+      if (updatedUser?.id) {
+        setUser(updatedUser);
+        localStorage.setItem('user', JSON.stringify(updatedUser));
         return { success: true };
       } else {
-        setError(response.message || 'Profile update failed');
-        return { success: false, error: response.message };
+        const errorMsg = response?.message || 'Profile update failed';
+        setError(errorMsg);
+        return { success: false, error: errorMsg };
       }
     } catch (err) {
       const errorMessage = err.message || 'Profile update failed';

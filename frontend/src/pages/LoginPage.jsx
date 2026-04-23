@@ -34,12 +34,7 @@ export default function LoginPage() {
         <div className="mb-8">
           <h1 className="text-3xl font-bold text-center text-blue-900">Wathiqati</h1>
           <p className="text-center text-gray-600 mt-2">Sign in to your account</p>
-          <div className="mt-4 p-3 bg-blue-50 border border-blue-200 rounded-lg text-sm text-blue-700">
-            <strong>Demo Credentials:</strong><br/>
-            Admin: admin@yaacoub.ma / Admin123!<br/>
-            Employee: employee@yaacoub.ma / Employee123!<br/>
-            Citizen: fatima.alaoui@email.com / Password123!
-          </div>
+        
         </div>
 
         {error && (
@@ -60,6 +55,7 @@ export default function LoginPage() {
               required
               disabled={loading}
               autoComplete="email"
+              
             />
           </div>
 
@@ -95,12 +91,6 @@ export default function LoginPage() {
           </p>
         </div>
 
-        <div className="mt-6 pt-6 border-t border-gray-200 text-center text-sm text-gray-500">
-          <p>Demo credentials:</p>
-          <p>Admin: admin@yaacoub.ma / Admin123!</p>
-          <p>Employee: employee@yaacoub.ma / Employee123!</p>
-          <p>Citizen: fatima.alaoui@email.com / Password123!</p>
-        </div>
       </div>
     </div>
   );

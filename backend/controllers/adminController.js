@@ -132,6 +132,8 @@ const approveRequest = async (req, res) => {
     request.pdfUrl = `/uploads/${pdfFileName}`;
     request.preparationLocation = preparationLocation;
     request.approvedAt = new Date();
+    // Explicitly save all fields before changing status to ensure data preservation
+    await request.save();
     await RequestService.changeStatus(request, 'approved');
 
     console.log(`[Request] Status changed: ${oldStatus} → approved`, { requestId: request.id });

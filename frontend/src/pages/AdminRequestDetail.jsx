@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useLanguage } from '../components/LanguageContext';
 import StatusBadge from '../components/ui/StatusBadge';
+import AdminTrackingManager from '../components/AdminTrackingManager';
 import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/card';
 import { Button } from '../components/ui/button';
 import { Textarea } from '../components/ui/textarea';
@@ -13,7 +14,7 @@ import { format } from 'date-fns';
 import { useNavigate } from 'react-router-dom';
 import { createPageUrl } from '../utils';
 import { motion } from 'framer-motion';
-import { ArrowLeft, ArrowRight, CheckCircle, FileDown, Upload, Loader2, User, FileText } from 'lucide-react';
+import { ArrowLeft, ArrowRight, CheckCircle, FileDown, Upload, Loader2, User, FileText, Map, MapPin } from 'lucide-react';
 
 export default function AdminRequestDetail() {
   const { t, isRTL } = useLanguage();
@@ -36,6 +37,7 @@ export default function AdminRequestDetail() {
     async function load() {
       try {
         const req = await getRequest(id);
+        console.log('[AdminRequestDetail] Initial load - Raw request data:', req);
         if (req) {
           setRequest(req);
           setNewStatus(req.status || 'pending');
@@ -53,10 +55,22 @@ export default function AdminRequestDetail() {
     else setLoading(false);
   }, [id]);
 
+  // Debug effect for request state changes
+  useEffect(() => {
+    console.log('[AdminRequestDetail] Request state changed:', {
+      status: request?.status,
+      preparationLocation: request?.preparationLocation,
+      hasLocation: !!request?.preparationLocation
+    });
+  }, [request]);
+
   const BackArrow = isRTL ? ArrowRight : ArrowLeft;
 
   const refreshRequest = async () => {
     const req = await getRequest(id);
+    console.log('[AdminRequestDetail] Raw request data:', req);
+    console.log('[AdminRequestDetail] Status:', req?.status, 'Type:', typeof req?.status);
+    console.log('[AdminRequestDetail] Preparation location:', req?.preparationLocation);
     if (req) {
       setRequest(req);
       setNewStatus(req.status || 'pending');
@@ -182,6 +196,42 @@ export default function AdminRequestDetail() {
           </div>
           <StatusBadge status={request.status} />
         </div>
+        
+        {(((request.status?.trim() === 'approved' || request.status?.trim() === 'document_generated')) && request.preparationLocation?.trim()) && (
+          <>
+            {console.log('[AdminRequestDetail] Location section condition check:', {
+              status: request.status,
+              statusTrimmed: request.status?.trim(),
+              statusLower: request.status?.toLowerCase(),
+              isApproved: request.status?.trim() === 'approved',
+              isDocumentGenerated: request.status?.trim() === 'document_generated',
+              preparationLocation: request.preparationLocation,
+              preparationLocationTrimmed: request.preparationLocation?.trim(),
+              conditionResult: ((request.status?.trim() === 'approved' || request.status?.trim() === 'document_generated') && request.preparationLocation?.trim())
+            })}
+            <div className="mt-6 p-6 bg-gradient-to-r from-emerald-50 to-green-50 border-2 border-emerald-200 rounded-2xl shadow-sm mb-6">
+            <div className="flex items-start gap-3">
+              <div className="w-8 h-8 rounded-full bg-emerald-100 flex items-center justify-center flex-shrink-0">
+                <span className="text-lg">📍</span>
+              </div>
+              <div className="flex-1">
+                <h3 className="text-sm font-bold text-emerald-800 mb-1">{t('preparationLocation')}</h3>
+                <p className="text-base font-semibold text-emerald-900 mb-2">{request.preparationLocation}</p>
+                <p className="text-sm text-emerald-700 mb-3">{t('collectionInstructions')}</p>
+                <a
+                  href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(request.preparationLocation)}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-flex items-center gap-2 px-3 py-2 bg-emerald-600 hover:bg-emerald-700 text-white text-sm font-medium rounded-lg transition-colors"
+                >
+                  <Map className="w-4 h-4" />
+                  {t('viewOnMap') || 'View on Map'}
+                </a>
+              </div>
+            </div>
+          </div>
+          </>
+        )}
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
           <div className="lg:col-span-2">
             <Card className="border-0 shadow-md">
@@ -209,6 +259,18 @@ export default function AdminRequestDetail() {
             </Card>
           </div>
           <div className="space-y-6">
+            {/* Tracking Manager */}
+            <Card className="border-0 shadow-md">
+              <CardContent className="pt-6">
+                <AdminTrackingManager 
+                  requestId={id} 
+                  onUpdate={(updatedRequest) => {
+                    setRequest(updatedRequest);
+                  }}
+                />
+              </CardContent>
+            </Card>
+            {/* Status Actions Card */}
             <Card className="border-0 shadow-md">
               <CardHeader><CardTitle className="text-sm text-[#9B1C1C]">{t('actions')}</CardTitle></CardHeader>
               <CardContent className="space-y-4">
